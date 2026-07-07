@@ -3,6 +3,7 @@ import logging
 ANSI = {
     "core": "\033[95m",
     "detect": "\033[92m",
+    "mapping": "\033[94m",
 }
 
 RESET = "\033[0m"
