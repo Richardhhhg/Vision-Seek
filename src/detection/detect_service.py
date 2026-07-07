@@ -1,8 +1,9 @@
 import asyncio
 
-from core.events import DetectionInput, DetectionOutput
-from detection.detection import Detection
 from detection.detection_model.detection_model import DetectionModel
+
+from core.events import DetectionOutput, DetectionRequestEvent
+from detection.detection import Detection
 from detection.preprocessing.preprocessor import Preprocessor
 
 
@@ -23,7 +24,7 @@ class DetectionService:
         self.queue = asyncio.Queue()
         self.detect = Detection(DetectionModel(), Preprocessor())
 
-        self.event_bus.subscribe(DetectionInput, self.queue)
+        self.event_bus.subscribe(DetectionRequestEvent, self.queue)
         
 
     async def run(self):

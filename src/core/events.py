@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 
-class DetectionInput(BaseModel):
+class DetectionRequestEvent(BaseModel):
     """
     Event for the input of the detection service. This represents a video that is passed into the detection module.
     """
-    pass
+    video_path: str
+    version: str = "0.1.0"
+    metadata: MetaData
 
 class DetectionOutput(BaseModel):
     """

@@ -32,7 +32,7 @@ class YOLODetectionModel(AbstractDetectionModel):
     def _detect_image(self, image: np.ndarray):
         return self.model(image)
 
-    def detect_video(self, video: np.ndarray):
+    def detect(self, video: np.ndarray):
         # TODO: This logic is outdated, update this to support processing with just np.ndarray.
         # Get metadata from video and place to write the annotated video
         # Iterate through frames in the video
