@@ -1,6 +1,9 @@
 import asyncio
 
 from core.events import DetectionInput, DetectionOutput
+from detection.detection import Detection
+from detection.detection_model.detection_model import DetectionModel
+from detection.preprocessing.preprocessor import Preprocessor
 
 
 class DetectionService:
@@ -18,6 +21,7 @@ class DetectionService:
     def __init__(self, event_bus):
         self.event_bus = event_bus
         self.queue = asyncio.Queue()
+        self.detect = Detection(DetectionModel(), Preprocessor())
 
         self.event_bus.subscribe(DetectionInput, self.queue)
         
@@ -31,3 +35,5 @@ class DetectionService:
             # get the result of the detection model
             # create a DetectionOutput event with the result
             # publish the DetectionOutput event to the event bus
+            return self.detect.run_detection(event.video_path)
+
