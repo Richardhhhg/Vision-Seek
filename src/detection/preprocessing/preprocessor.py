@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from src.detection.data import PreprocessedVideo
+
 
 class Preprocessor:
     """
@@ -30,7 +32,7 @@ class Preprocessor:
         """
         self.steps.append(step)
 
-    def preprocess_video(self, video_path: str) -> np.ndarray:
+    def preprocess_video(self, video_path: str) -> PreprocessedVideo:
         """
         Preprocesses the video at the given path according to the added steps and returns the preprocessed video.
         """
@@ -56,4 +58,4 @@ class Preprocessor:
 
             preprocessed_frames.append(frame)
         preprocessed_frames = np.array(preprocessed_frames)
-        return preprocessed_frames
+        return PreprocessedVideo(frames=preprocessed_frames, steps=self.steps)
