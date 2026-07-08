@@ -24,7 +24,8 @@ def setup():
     preprocessed_video = PreprocessedVideo(frames=frames, steps=[], num_tiles=None, tile_offset=None)
     yield model, preprocessed_video
 
-def test_detection_model_can_run_detection(model, preprocessed_video):
+def test_detection_model_can_run_detection(setup):
+    model, preprocessed_video = setup
     detection_output = model.run_detection(preprocessed_video)
     assert isinstance(detection_output, DetectionOutput)
     assert detection_output.output_video_path is not None
@@ -38,7 +39,8 @@ def test_detection_model_can_run_detection(model, preprocessed_video):
     assert isinstance(frame_zero.conf, np.ndarray | torch.Tensor)
     assert isinstance(frame_zero.cls, np.ndarray | torch.Tensor)
 
-def test_detection_model_cuda_gives_tensors(model, preprocessed_video):
+def test_detection_model_cuda_gives_tensors(setup):
+    model, preprocessed_video = setup
     if torch.cuda.is_available():
         detection_output = model.run_detection(preprocessed_video, device="cuda")
         frame_zero = detection_output.annotated_frames[0]
@@ -51,7 +53,8 @@ def test_detection_model_cuda_gives_tensors(model, preprocessed_video):
         pytest.skip("CUDA is not available, skipping: test_detection_model_cuda_gives_tensors")
 
 
-def test_detection_model_cpu_gives_numpy(model, preprocessed_video):
+def test_detection_model_cpu_gives_numpy(setup):
+    model, preprocessed_video = setup
     detection_output = model.run_detection(preprocessed_video, device="cpu")
     frame_zero = detection_output.annotated_frames[0]
     assert isinstance(frame_zero.xyxy, np.ndarray)
