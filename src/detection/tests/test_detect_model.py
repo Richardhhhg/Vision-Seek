@@ -4,14 +4,16 @@
 import numpy as np
 import pytest
 import torch
-from detection.data import DetectionFrame, DetectionOutput
+
+from detection.data import DetectionFrame, PostprocessorOutput
 
 
 @pytest.fixture(scope="module")
 def setup():
     import cv2
-    from detection.data import PreprocessedVideo
     from detection.model.model_factory import ModelFactory
+
+    from detection.data import PreprocessedVideo
     
     model = ModelFactory.get_model("yolo", model_path="src/detection/detection_model/model/test_model.pt")
     video = cv2.VideoCapture("data/test_data/test_video.mp4")
@@ -27,7 +29,7 @@ def setup():
 def test_detection_model_can_run_detection(setup):
     model, preprocessed_video = setup
     detection_output = model.run_detection(preprocessed_video)
-    assert isinstance(detection_output, DetectionOutput)
+    assert isinstance(detection_output, PostprocessorOutput)
     assert detection_output.output_video_path is not None
     assert detection_output.annotated_frames is not None
     frame_zero = detection_output.annotated_frames[0]

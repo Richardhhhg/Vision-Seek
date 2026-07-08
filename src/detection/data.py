@@ -60,7 +60,7 @@ class DetectionInput(BaseModel):
     video_path: str
     version: str = "0.1.0"
 
-class DetectionOutput(BaseModel):
+class PostprocessorOutput(BaseModel):
     """
     Output event data for the detection module. This represents all of the different objects that were detected from the detection module and their corresponding locations in the video.
 

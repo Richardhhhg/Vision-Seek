@@ -1,4 +1,4 @@
-from detection.data import DetectionModelOutput, DetectionOutput
+from detection.data import DetectionModelOutput, PostprocessorOutput
 
 
 class Postprocessor:
@@ -34,7 +34,7 @@ class Postprocessor:
         """
         self.steps.append(step)
 
-    def postprocess_video(self, detected_video: DetectionModelOutput) -> DetectionOutput:
+    def postprocess_video(self, detected_video: DetectionModelOutput) -> PostprocessorOutput:
         """
         Postprocesses the detected video according to the added steps and returns the postprocessed video.
         """
