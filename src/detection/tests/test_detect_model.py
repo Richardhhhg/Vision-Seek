@@ -24,7 +24,7 @@ def setup():
         if not ret:
             break
         frames.append(frame)
-    preprocessed_video = PreprocessedVideo(frames=np.array(frames), step_names=[], num_tiles=None, tile_offset=None)
+    preprocessed_video = PreprocessedVideo(frames=np.array(frames), step_names=[], num_tiles=None, tile_offset=None, source_video_path=TEST_VIDEO_PATH)
     yield model, preprocessed_video
 
 def test_detection_model_can_run_detection(setup):

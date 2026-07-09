@@ -23,8 +23,8 @@ def setup():
             break
         frames.append(frame)
     input_video.release()
-    preprocessed_video = PreprocessedVideo(frames=np.array(frames), step_names=[], num_tiles=None, tile_offset=None)
-    detection_model_output = DetectionModelOutput(annotated_frames=[], output_video_path="fake_path", preprocessed_video=preprocessed_video)
+    preprocessed_video = PreprocessedVideo(frames=np.array(frames), step_names=[], num_tiles=None, tile_offset=None, source_video_path=TEST_VIDEO_PATH)
+    detection_model_output = DetectionModelOutput(annotated_frames=[],  preprocessed_video=preprocessed_video)
     return detection_model_output
 
 def test_bw_to_color_smoke(setup):

@@ -18,6 +18,6 @@ def test_detection_smoke():
     assert len(detection_output.annotated_frames) > 0
 
 def test_detection_invalid_config():
-    detect = Detection(config_path=TEST_CONFIG_FAKE_PATH)
     with pytest.raises(ValueError):
+        detect = Detection(config_path=TEST_CONFIG_FAKE_PATH)
         detect.run_detection(DetectionInput(video_path=TEST_VIDEO_PATH))
