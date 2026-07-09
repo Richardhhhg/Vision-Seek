@@ -5,18 +5,19 @@ import numpy as np
 import pytest
 import torch
 
-from detection.data import DetectionFrame, PostprocessorOutput
+from detection.data import DetectionFrame, DetectionModelOutput
+from paths import TEST_MODEL_PATH, TEST_VIDEO_PATH
 
 
 @pytest.fixture(scope="module")
 def setup():
     import cv2
-    from detection.model.model_factory import ModelFactory
 
     from detection.data import PreprocessedVideo
+    from detection.detection_model.model_factory import ModelFactory
     
-    model = ModelFactory.get_model("yolo", model_path="src/detection/detection_model/model/test_model.pt")
-    video = cv2.VideoCapture("data/test_data/test_video.mp4")
+    model = ModelFactory.get_model("yolo", model_path=TEST_MODEL_PATH)
+    video = cv2.VideoCapture(TEST_VIDEO_PATH)
     frames = []
     while True:
         ret, frame = video.read()
@@ -28,8 +29,8 @@ def setup():
 
 def test_detection_model_can_run_detection(setup):
     model, preprocessed_video = setup
-    detection_output = model.run_detection(preprocessed_video)
-    assert isinstance(detection_output, PostprocessorOutput)
+    detection_output = model.detect(preprocessed_video)
+    assert isinstance(detection_output, DetectionModelOutput)
     assert detection_output.output_video_path is not None
     assert detection_output.annotated_frames is not None
     frame_zero = detection_output.annotated_frames[0]
@@ -44,7 +45,7 @@ def test_detection_model_can_run_detection(setup):
 def test_detection_model_cuda_gives_tensors(setup):
     model, preprocessed_video = setup
     if torch.cuda.is_available():
-        detection_output = model.run_detection(preprocessed_video, device="cuda")
+        detection_output = model.detect(preprocessed_video, device="cuda")
         frame_zero = detection_output.annotated_frames[0]
         assert isinstance(frame_zero.xyxy, torch.Tensor)
         assert isinstance(frame_zero.xywh, torch.Tensor)
@@ -57,7 +58,7 @@ def test_detection_model_cuda_gives_tensors(setup):
 
 def test_detection_model_cpu_gives_numpy(setup):
     model, preprocessed_video = setup
-    detection_output = model.run_detection(preprocessed_video, device="cpu")
+    detection_output = model.detect(preprocessed_video, device="cpu")
     frame_zero = detection_output.annotated_frames[0]
     assert isinstance(frame_zero.xyxy, np.ndarray)
     assert isinstance(frame_zero.xywh, np.ndarray)

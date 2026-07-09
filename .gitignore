@@ -1,3 +1,4 @@
 data
 *.egg-info
-annotated_videos/*.mp4
+*.pyc
+__pycache__/

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from detection.data import DetectionOutput
+
 
 class DetectionRequestEvent(BaseModel):
     """
@@ -11,11 +13,13 @@ class DetectionRequestEvent(BaseModel):
     version: str = "0.1.0"
     metadata: MetaData
 
-class DetectionOutput(BaseModel):
+class DetectionCompleteEvent(BaseModel):
     """
     Event for the output of the detection service. This represents all the detections for some video that was passed into the detection module.
     """
-    pass
+    detection_output: DetectionOutput
+    version: str = "0.1.0"
+    metadata: MetaData
 
 class MappingOutput(BaseModel):
     """

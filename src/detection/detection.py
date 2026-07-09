@@ -1,8 +1,7 @@
 # TODO: I don't like that this depends on core events but i think its ok (?)
 import os
 
-from core.events import DetectionOutput
-from detection.data import DetectionInput
+from detection.data import DetectionInput, DetectionOutput
 from detection.detection_model.model_factory import ModelFactory
 from detection.postprocessing.postprocessor import Postprocessor
 from detection.preprocessing.preprocessor import Preprocessor
@@ -22,8 +21,8 @@ class Detection:
     TODO: run detection probably shouldn't take in a video path, instead it should probably take in some sort of data wrapper object
     - run_detection (video_path: str): Runs the detection on the given video path and returns the results
     """
-    def __init__(self):
-        self.detection_model, self.preprocessor, self.postprocessor = self._load_config(CONFIG_PATH)
+    def __init__(self, config_path: str = CONFIG_PATH):
+        self.detection_model, self.preprocessor, self.postprocessor = self._load_config(config_path)
 
     def _load_config(self, config_path: str):
         """
@@ -44,5 +43,5 @@ class Detection:
         detections = self.detection_model.detect_video(video)
         postprocessed = self.postprocessor.postprocess_video(detections)
 
-        result = DetectionOutput(postprocessed)
+        result = DetectionOutput(**postprocessed)
         return result

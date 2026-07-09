@@ -2,7 +2,7 @@ import asyncio
 
 from detection.detection_model.detection_model import DetectionModel
 
-from core.events import DetectionOutput, DetectionRequestEvent
+from core.events import DetectionCompleteEvent, DetectionRequestEvent
 from detection.detection import Detection
 from detection.preprocessing.preprocessor import Preprocessor
 

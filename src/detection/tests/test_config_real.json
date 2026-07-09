@@ -1,0 +1,12 @@
+{
+    "model": {
+        "model_type": "yolo",
+        "model_path": "path/to/yolo/model.pt"
+    },
+    "preprocessing": {
+        "steps": [
+            "bw",
+            "resize"
+        ]
+    }
+}

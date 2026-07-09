@@ -1,7 +1,9 @@
+from functools import partial
+
 import cv2
 import numpy as np
 
-from src.detection.data import PreprocessedVideo
+from detection.data import PreprocessedVideo
 
 
 class Preprocessor:
@@ -18,19 +20,21 @@ class Preprocessor:
     - _make_bw(frame: np.ndarray): Converts the given frame to black and white
     - _resize(frame: np.ndarray, width: int, height: int): Resizes the given frame to the specified width and height
     """
-    def __init__(self, steps: list = None, **kwargs):
-        self.steps = steps if steps is not None else []
+    def __init__(self, **kwargs):
+        self.steps = []
 
         self.supported_steps = {
             "bw": self._make_bw,
             "resize": self._resize,
         }
 
-    def add_step(self, step: str) -> None:
+    def add_step(self, step: str, *args, **kwargs) -> None:
         """
         Adds a preprocessing step to the list of steps to be applied to the video.
         """
-        self.steps.append(step)
+        if step not in self.supported_steps:
+            raise ValueError(f"Unsupported preprocessing step: {step}")
+        self.steps.append(partial(self.supported_steps[step], *args, **kwargs))
 
     def preprocess_video(self, video_path: str) -> PreprocessedVideo:
         """
@@ -51,10 +55,7 @@ class Preprocessor:
                 break
 
             for step in self.steps:
-                if step in self.supported_steps:
-                    frame = self.supported_steps[step](frame)
-                else:
-                    raise ValueError(f"Unsupported preprocessing step: {step}")
+                frame = step(frame)
 
             preprocessed_frames.append(frame)
         preprocessed_frames = np.array(preprocessed_frames)
