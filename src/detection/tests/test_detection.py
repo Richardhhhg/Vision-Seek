@@ -2,10 +2,11 @@
 # 1. Ensuring that with detection input data being passed in, the detection module returns the correct output data structure
 # 2. Ensure behaviour is expected when passing invalid config
 import pytest
+from paths import TEST_CONFIG_FAKE_PATH, TEST_CONFIG_REAL_PATH, TEST_VIDEO_PATH
 
 from detection.data import DetectionInput, DetectionOutput
 from detection.detection import Detection
-from paths import TEST_CONFIG_FAKE_PATH, TEST_CONFIG_REAL_PATH, TEST_VIDEO_PATH
+
 
 def test_detection_smoke():
     detect = Detection(config_path=TEST_CONFIG_REAL_PATH)
@@ -17,8 +18,6 @@ def test_detection_smoke():
     assert len(detection_output.annotated_frames) > 0
 
 def test_detection_invalid_config():
-    try:
-        detect = Detection(config_path=TEST_CONFIG_FAKE_PATH)
-        assert False
-    except Exception as e:
-        assert isinstance(e, ValueError)
+    detect = Detection(config_path=TEST_CONFIG_FAKE_PATH)
+    with pytest.raises(ValueError):
+        detect.run_detection(DetectionInput(video_path=TEST_VIDEO_PATH))

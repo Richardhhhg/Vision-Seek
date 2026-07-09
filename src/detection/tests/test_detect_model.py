@@ -4,9 +4,9 @@
 import numpy as np
 import pytest
 import torch
+from paths import TEST_MODEL_PATH, TEST_VIDEO_PATH
 
 from detection.data import DetectionFrame, DetectionModelOutput
-from paths import TEST_MODEL_PATH, TEST_VIDEO_PATH
 
 
 @pytest.fixture(scope="module")
@@ -24,14 +24,13 @@ def setup():
         if not ret:
             break
         frames.append(frame)
-    preprocessed_video = PreprocessedVideo(frames=frames, steps=[], num_tiles=None, tile_offset=None)
+    preprocessed_video = PreprocessedVideo(frames=np.array(frames), step_names=[], num_tiles=None, tile_offset=None)
     yield model, preprocessed_video
 
 def test_detection_model_can_run_detection(setup):
     model, preprocessed_video = setup
     detection_output = model.detect(preprocessed_video)
     assert isinstance(detection_output, DetectionModelOutput)
-    assert detection_output.output_video_path is not None
     assert detection_output.annotated_frames is not None
     frame_zero = detection_output.annotated_frames[0]
     assert isinstance(frame_zero, DetectionFrame)

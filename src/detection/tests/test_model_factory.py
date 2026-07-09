@@ -2,10 +2,10 @@
 # 1. Making sure can make valid model
 # 2. Testing with invalid model type, make sure it behaves as expected
 import pytest
+from paths import FAKE_MODEL_PATH, TEST_MODEL_PATH
 
 from detection.detection_model.abstract_detection_model import AbstractDetectionModel
 from detection.detection_model.model_factory import ModelFactory
-from paths import FAKE_MODEL_PATH, TEST_MODEL_PATH
 
 
 def load_valid_config():
