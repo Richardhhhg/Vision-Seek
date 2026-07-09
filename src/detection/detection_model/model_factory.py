@@ -1,10 +1,10 @@
-
 import logging
 
 from detection.detection_model.abstract_detection_model import AbstractDetectionModel
-from detection.detection_model.detection_model import YOLODetectionModel
+from detection.detection_model.yolo_detection_model import YOLODetectionModel
 
 logger = logging.getLogger("detect")
+
 
 class ModelFactory:
     @staticmethod

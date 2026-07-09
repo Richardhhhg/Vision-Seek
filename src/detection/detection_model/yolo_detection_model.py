@@ -1,13 +1,14 @@
 import logging
 
-import cv2
 import numpy as np
+import torch
 from ultralytics import YOLO
 
+from detection.data import DetectionFrame, DetectionModelOutput, PreprocessedVideo
 from detection.detection_model.abstract_detection_model import AbstractDetectionModel
-from src.detection.data import DetectionModelOutput
 
 logger = logging.getLogger("detect")
+
 
 class YOLODetectionModel(AbstractDetectionModel):
     """
@@ -21,54 +22,65 @@ class YOLODetectionModel(AbstractDetectionModel):
     Methods:
     - load_model(): Loads the YOLO model from the specified path.
     - _detect_image(image: np.ndarray): Performs detection on the input image and returns the results as yolo result format
-    - detect_video(video_path: str): Performs detection on the input video and returns a list of detection results for each unique object
+    - detect(preprocessed_video: PreprocessedVideo, device: str = "cpu"): Performs detection on all frames of the preprocessed video and returns a DetectionModelOutput.
     """
-    def __init__(self, model_path: str = "src/detect/detection_model/model/model.pt"):
+    def __init__(self, model_path: str = "src/detection/detection_model/model/test_model.pt"):
         self.model_path = model_path
         self.model = self._load_model()
 
     def _load_model(self):
         return YOLO(self.model_path)
 
-    def _detect_image(self, image: np.ndarray):
-        return self.model(image)
+    def _detect_image(self, image: np.ndarray, device: str = "cpu"):
+        return self.model(image, device=device, verbose=False)
 
-    def detect(self, video: np.ndarray, device: str = "cpu") -> DetectionModelOutput:
-        # TODO: This logic is outdated, update this to support processing with just np.ndarray.
-        # Get metadata from video and place to write the annotated video
-        # Iterate through frames in the video
-        # detect the objects in the frame
-        # Annotate the frame with the detected objects and write to the output video
-        # store the labels and stuff in some data structure to be returned at end (as of writing this, the data object is not implemented)
-        # close all things relating to video and return
-        video = cv2.VideoCapture(video_path)
-    
-        fps = video.get(cv2.CAP_PROP_FPS)
-        width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        output_path = VIDEOS + "/output/" + "detect_" + Path(video_path).stem + ".mp4"
-        output = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    def detect(
+        self, preprocessed_video: PreprocessedVideo, device: str = "cpu"
+    ) -> DetectionModelOutput:
+        frames = preprocessed_video.frames
+        if isinstance(frames, torch.Tensor):
+            frames_np = frames.detach().cpu().numpy()
+        else:
+            frames_np = np.asarray(frames)
 
-        while True:
-            ret, frame = video.read()
-            if not ret:
-                break
-            results = self.model(frame)[0]
+        num_frames = frames_np.shape[0]
+        annotated_frames: list[DetectionFrame] = []
+        use_cuda = device == "cuda"
 
-            for box in results.boxes:
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                conf = float(box.conf[0])
-                cls = int(box.cls[0])
+        for i in range(num_frames):
+            frame = frames_np[i]
+            results = self._detect_image(frame, device=device)
+            result = results[0]
+            boxes = result.boxes
 
-                label = f"{self.model.names[cls]} {conf:.2f}"
+            if use_cuda:
+                # Keep attributes as torch.Tensor
+                xyxy = boxes.xyxy
+                xywh = boxes.xywh
+                xyxyn = boxes.xyxyn
+                conf = boxes.conf
+                cls = boxes.cls
+            else:
+                # Convert attributes to numpy arrays
+                xyxy = boxes.xyxy.cpu().numpy()
+                xywh = boxes.xywh.cpu().numpy()
+                xyxyn = boxes.xyxyn.cpu().numpy()
+                conf = boxes.conf.cpu().numpy()
+                cls = boxes.cls.cpu().numpy()
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 255, 255), 2)
-                cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-            # annotated = results.plot()
-            output.write(frame)
+            annotated_frames.append(
+                DetectionFrame(
+                    frame_number=i,
+                    xyxy=xyxy,
+                    xywh=xywh,
+                    xyxyn=xyxyn,
+                    conf=conf,
+                    cls=cls,
+                )
+            )
 
-        output.release()
-        video.release()
-
-        return
+        return DetectionModelOutput(
+            annotated_frames=annotated_frames,
+            output_video_path=None,
+            preprocessed_video=preprocessed_video,
+        )
