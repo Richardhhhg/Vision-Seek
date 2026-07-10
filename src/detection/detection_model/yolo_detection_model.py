@@ -22,7 +22,7 @@ class YOLODetectionModel(AbstractDetectionModel):
     Methods:
     - load_model(): Loads the YOLO model from the specified path.
     - _detect_image(image: np.ndarray): Performs detection on the input image and returns the results as yolo result format
-    - detect(preprocessed_video: PreprocessedVideo, device: str = "cpu"): Performs detection on all frames of the preprocessed video and returns a DetectionModelOutput.
+    - detect(preprocessed_video: PreprocessedVideo, device: str | None = None): Performs detection on all frames of the preprocessed video and returns a DetectionModelOutput. Uses cuda when available unless overridden.
     """
     def __init__(self, model_path: str = "src/detection/detection_model/model/test_model.pt"):
         self.model_path = model_path
@@ -31,13 +31,16 @@ class YOLODetectionModel(AbstractDetectionModel):
     def _load_model(self):
         return YOLO(self.model_path)
 
-    def _detect_image(self, image: np.ndarray, device: str = "cpu"):
+    def _detect_image(self, image: np.ndarray, device: str):
         # YOLO can in fact handle gpu processing even if image is numpy
         return self.model(image, device=device, verbose=False)
 
     def detect(
-        self, preprocessed_video: PreprocessedVideo, device: str = "cpu"
+        self, preprocessed_video: PreprocessedVideo, device: str | None = None
     ) -> DetectionModelOutput:
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
         frames = preprocessed_video.frames
         if isinstance(frames, torch.Tensor):
             frames_np = frames.detach().cpu().numpy()

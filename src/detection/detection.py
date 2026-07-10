@@ -1,8 +1,6 @@
 import json
 import os
 
-import torch
-
 from detection.data import DetectionInput, DetectionOutput
 from detection.detection_model.model_factory import ModelFactory
 from detection.postprocessing.postprocessor import Postprocessor
@@ -51,9 +49,10 @@ class Detection:
 
         return detection_model, preprocessor, postprocessor
 
-    def run_detection(self, detection_input: DetectionInput) -> DetectionOutput:
+    def run_detection(
+        self, detection_input: DetectionInput, device: str | None = None
+    ) -> DetectionOutput:
         preprocessed_video = self.preprocessor.preprocess_video(detection_input.video_path)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
         detection_model_output = self.detection_model.detect(preprocessed_video, device)
         postprocessed = self.postprocessor.postprocess_video(detection_model_output)
 
