@@ -53,6 +53,8 @@ class Preprocessor:
         Preprocesses the video at the given path according to the added steps and returns the preprocessed video.
         """
         cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise ValueError(f"Could not open video file: {video_path}")
         frames: list[np.ndarray] = []
         while True:
             ret, frame = cap.read()
