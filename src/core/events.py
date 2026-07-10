@@ -8,6 +8,11 @@ from detection.data import DetectionOutput
 class DetectionRequestEvent(BaseModel):
     """
     Event for the input of the detection service. This represents a video that is passed into the detection module.
+
+    Attributes:
+    - video_path: Path to the video that is passed into the detection module
+    - version: Version of the DetectionRequestEvent Schema
+    - metadata: Metadata of the DetectionRequestEvent
     """
     video_path: str
     version: str = "0.1.0"
@@ -16,6 +21,11 @@ class DetectionRequestEvent(BaseModel):
 class DetectionCompleteEvent(BaseModel):
     """
     Event for the output of the detection service. This represents all the detections for some video that was passed into the detection module.
+
+    Attributes:
+    - detection_output: The output of the detection module, which contains all the detections for a given video.
+    - version: Version of the DetectionCompleteEvent Schema
+    - metadata: Metadata of the DetectionCompleteEvent
     """
     detection_output: DetectionOutput
     version: str = "0.1.0"
@@ -29,6 +39,9 @@ class MappingOutput(BaseModel):
 
 class MetaData(BaseModel):
     """
-    Represents the metadata of the process that is working.
+    Represents the metadata of the process
+
+    Attributes:
+    - version: Version of Metadata Schema
     """
-    pass
+    version: str = "0.1.0"

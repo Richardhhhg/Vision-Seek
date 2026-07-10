@@ -1,11 +1,14 @@
 import asyncio
-
-from detection.detection_model.detection_model import DetectionModel
+from pathlib import Path
 
 from core.events import DetectionCompleteEvent, DetectionRequestEvent
+from detection.data import DetectionInput
 from detection.detection import Detection
+from detection.detection_model.model_factory import ModelFactory
 from detection.preprocessing.preprocessor import Preprocessor
 
+DEFAULT_MODEL_PATH = str(Path(__file__) / "detection_model" / "model" / "test_model.pt")
+DEFAULT_MODEL_TYPE = "yolo"
 
 class DetectionService:
     """
@@ -19,10 +22,11 @@ class DetectionService:
     - queue: An asyncio queue for receiving events from the event bus.
     - detect: the actual detection object which is used on the input video
     """
-    def __init__(self, event_bus):
+    def __init__(self, event_bus, model_type: str = DEFAULT_MODEL_TYPE, model_path: str=DEFAULT_MODEL_PATH):
         self.event_bus = event_bus
         self.queue = asyncio.Queue()
-        self.detect = Detection(DetectionModel(), Preprocessor())
+        detection_model = ModelFactory.get_model(model_type=model_type, model_path=model_path)
+        self.detect = Detection(detection_model, Preprocessor())
 
         self.event_bus.subscribe(DetectionRequestEvent, self.queue)
         
@@ -30,11 +34,7 @@ class DetectionService:
     async def run(self):
         while True:
             event = await self.queue.get()
-
-            # TODO: process this event in some way
-            # pass the event into the actual detection model
-            # get the result of the detection model
-            # create a DetectionOutput event with the result
-            # publish the DetectionOutput event to the event bus
-            return self.detect.run_detection(event.video_path)
-
+            detection_input = DetectionInput(video_path=event.video_path)
+            detection_output = self.detect.run_detection(detection_input)
+            detection_complete_event = DetectionCompleteEvent(detection_output=detection_output, metadata=event.metadata)
+            await self.event_bus.publish(detection_complete_event)
