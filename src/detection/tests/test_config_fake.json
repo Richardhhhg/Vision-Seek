@@ -1,0 +1,12 @@
+{
+    "model": {
+        "model_type": "fake_model",
+        "model_path": "path/to_fake_model.pt"
+    },
+    "preprocessing": {
+        "steps": [
+            "fake_step",
+            "fake_step_2"
+        ]
+    }
+}

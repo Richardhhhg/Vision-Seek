@@ -1,0 +1,22 @@
+[project]
+name="Vision-Seek"
+version="0.1.0"
+requires-python = ">=3.10"
+dependencies = ["numpy", "ultralytics", "torch", "opencv-python", "Pillow", "pydantic", "sahi"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["core", "detection"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing"
+
+[tool.coverage.report]
+omit = [
+    "src/main.py",
+    "src/logger_config.py"
+]

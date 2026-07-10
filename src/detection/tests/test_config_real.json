@@ -1,0 +1,15 @@
+{
+    "model": {
+        "model_type": "yolo",
+        "model_path": "src/detection/detection_model/model/test_model.pt"
+    },
+    "preprocessing": {
+        "steps": [
+            {
+                "name": "resize",
+                "width": 640,
+                "height": 480
+            }
+        ]
+    }
+}

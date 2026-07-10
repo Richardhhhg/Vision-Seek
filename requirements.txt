@@ -1,2 +1,13 @@
+# runtime
 numpy
+torch
 ultralytics
+opencv-python
+Pillow
+pydantic
+sahi
+
+# dev
+pytest
+pytest-cov
+pytest-asyncio

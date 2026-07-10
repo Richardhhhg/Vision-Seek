@@ -20,6 +20,12 @@ The mapping module takes the results of the detection module and maps it into th
 > [!NOTE]
 > The mapping module has yet to be implemented
 
+## Testing
+
+Each service has a tests folder. Write unit tests in this folder for the specified service. 
+
+With integration tests, use the tests folder at the root of the repository.
+
 ## Installation
 
 > [!NOTE]
