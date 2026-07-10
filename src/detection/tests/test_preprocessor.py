@@ -7,10 +7,10 @@
 import numpy as np
 import pytest
 import torch
-from paths import TEST_VIDEO_PATH
 
 from detection.data import PreprocessedVideo
 from detection.preprocessing.preprocessor import Preprocessor
+from detection.tests.paths import TEST_VIDEO_PATH
 
 
 def test_preprocessor_bw_gives_ndarray_3_same_channels():

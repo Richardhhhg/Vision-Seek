@@ -1,7 +1,7 @@
 {
     "model": {
         "model_type": "yolo",
-        "model_path": "/home/koyo-ai/ssd2/private/Vision-Seek/src/detection/detection_model/model/test_model.pt"
+        "model_path": "src/detection/detection_model/model/test_model.pt"
     },
     "preprocessing": {
         "steps": [

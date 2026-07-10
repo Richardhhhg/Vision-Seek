@@ -2,10 +2,10 @@
 # 1. Making sure can make valid model
 # 2. Testing with invalid model type, make sure it behaves as expected
 import pytest
-from paths import FAKE_MODEL_PATH, TEST_MODEL_PATH
 
 from detection.detection_model.abstract_detection_model import AbstractDetectionModel
 from detection.detection_model.model_factory import ModelFactory
+from detection.tests.paths import FAKE_MODEL_PATH, TEST_MODEL_PATH
 
 
 def load_valid_config():
@@ -27,8 +27,6 @@ def test_model_factory_valid_config_returns_abstract_detection_model():
 
 def test_model_factory_invalid_config_raises_exception():
     config = load_fake_config()
-    try:
+    with pytest.raises(ValueError):
         model = ModelFactory.get_model(config["model_type"], config["model_path"])
         assert False, "Expected an exception to be raised for invalid model type"
-    except ValueError as e:
-        assert isinstance(e, ValueError)

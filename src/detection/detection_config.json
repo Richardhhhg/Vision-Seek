@@ -5,8 +5,12 @@
     },
     "preprocessing": {
         "steps": [
-            "make_bw",
-            "resize"
+            "bw",
+            {
+                "name": "resize",
+                "width": 640,
+                "height": 480
+            }
         ]
     }
 }

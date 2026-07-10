@@ -7,10 +7,10 @@
 import cv2
 import numpy as np
 import pytest
-from paths import TEST_VIDEO_PATH
 
 from detection.data import DetectionModelOutput, PostprocessorOutput, PreprocessedVideo
 from detection.postprocessing.postprocessor import Postprocessor
+from detection.tests.paths import TEST_VIDEO_PATH
 
 
 @pytest.fixture(scope="function")

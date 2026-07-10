@@ -4,9 +4,9 @@
 import numpy as np
 import pytest
 import torch
-from paths import TEST_MODEL_PATH, TEST_VIDEO_PATH
 
 from detection.data import DetectionFrame, DetectionModelOutput
+from detection.tests.paths import TEST_MODEL_PATH, TEST_VIDEO_PATH
 
 
 @pytest.fixture(scope="module")

@@ -2,10 +2,14 @@
 # 1. Ensuring that with detection input data being passed in, the detection module returns the correct output data structure
 # 2. Ensure behaviour is expected when passing invalid config
 import pytest
-from paths import TEST_CONFIG_FAKE_PATH, TEST_CONFIG_REAL_PATH, TEST_VIDEO_PATH
 
 from detection.data import DetectionInput, DetectionOutput
 from detection.detection import Detection
+from detection.tests.paths import (
+    TEST_CONFIG_FAKE_PATH,
+    TEST_CONFIG_REAL_PATH,
+    TEST_VIDEO_PATH,
+)
 
 
 def test_detection_smoke():

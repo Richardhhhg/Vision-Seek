@@ -198,6 +198,8 @@ class Postprocessor:
         )
 
         cap = cv2.VideoCapture(source_video_path)
+        if not cap.isOpened():
+            raise ValueError(f"Unable to Open Video: {source_video_path}")
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))

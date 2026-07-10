@@ -85,6 +85,5 @@ class YOLODetectionModel(AbstractDetectionModel):
 
         return DetectionModelOutput(
             annotated_frames=annotated_frames,
-            output_video_path=None,
             preprocessed_video=preprocessed_video,
         )
