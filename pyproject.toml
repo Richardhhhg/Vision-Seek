@@ -11,3 +11,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["core", "detection"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing"
+
+[tool.coverage.report]
+omit = [
+    "src/main.py",
+    "src/logger_config.py"
+]
