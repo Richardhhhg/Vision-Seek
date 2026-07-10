@@ -32,6 +32,7 @@ class YOLODetectionModel(AbstractDetectionModel):
         return YOLO(self.model_path)
 
     def _detect_image(self, image: np.ndarray, device: str = "cpu"):
+        # YOLO can in fact handle gpu processing even if image is numpy
         return self.model(image, device=device, verbose=False)
 
     def detect(
