@@ -31,9 +31,14 @@ class DetectionCompleteEvent(BaseModel):
     version: str = "0.1.0"
     metadata: MetaData
 
-class MappingOutput(BaseModel):
+class GeoMappingCompleteEvent(BaseModel):
     """
-    Output event data for the mapping module. This represents all of the different objects that were detected from the detection module and their corresponding locations in the world.
+    Output of the GeoMapping module. Represents all objects that have been detected, deduplicated, and mapped into the real world.
+
+    Attributes:
+    - 
+    - version: Version of GeoMappingCompleteEvent Schema
+    - metadata: Metadata
     """
     pass
 
