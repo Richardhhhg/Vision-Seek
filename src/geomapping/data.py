@@ -12,14 +12,65 @@ class GeoMappingInput(BaseModel):
 class GeoMappingOutput(BaseModel):
     pass
 
-class SRTInput(BaseModel):
-    pass
+class TelemetryInput(BaseModel):
+    """
+    Takes in raw inputs from videos, srt, and other telemetry data.
 
-class SRTOutput(BaseModel):
+    Attributes:
+    - srt_file_path (str): The path to the SRT file that contains the telemetry data for the video.
+    - telemetry_file_path (str): The path to the telemetry file that contains additional telemetry data for the video.
+
+    Some other things to consider (in the future):
+    - SRT and telemetry data may not always have the same data. Ie. telemetry may contain gimbal data or this may be found in SRT.
+    - Frame rate of video may not match the srt and telemetry data intervals. Currently assuming 30 fps with test data.
     """
-    Output of the SRT processing. This extracts all the drone data.
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    srt_file_path: str
+    telemetry_file_path: str
+
+class TelemetryOutput(BaseModel):
     """
-    pass
+    Converts all drone telemetry and stuff data into usable format for the rest of the codebase.
+
+    Attributes:
+    ###############################################
+    # General Metadata about Camera and Detection #
+    ###############################################
+    - image_width (int): The width of the image in pixels.
+    - image_height (int): The height of the image in pixels.
+    - camera_type (str): The type of camera used to capture the video. Monocular or stereo (currently only monocular is supported).
+    - horizontal_fov (float | None): The horizontal field of view of the camera in degrees. Optional if diagonal_fov is provided. In degrees
+    - vertical_fov (float | None): The vertical field of view of the camera in degrees. Optional if diagonal_fov is provided. In degrees
+    - diagonal_fov (float | None): The diagonal field of view of the camera in degrees. Optional if horizontal_fov and vertical_fov are provided. In degrees
+    - aspect_ratio (float | None): The aspect ratio of the camera (width / height). Optional if image dimensions can be used instead.
+
+    #############################
+    # Frame Specific Parameters #
+    #############################
+    TODO: Should probably support altitude in the future. This would also require the altitude the drone starts at (on ground)
+    - longitude (np.ndarray): Camera longitude per frame, shape (F,).
+    - latitude (np.ndarray): Camera latitude per frame, shape (F,).
+    - height_above_ground (np.ndarray): Camera height above ground per frame, shape (F,).
+    - gimbal_pitch (np.ndarray): Gimbal pitch in degrees per frame, shape (F,).
+    - gimbal_yaw (np.ndarray): Gimbal yaw in degrees per frame, shape (F,).
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    image_width: int
+    image_height: int
+    camera_type: str
+
+    longitude: np.ndarray
+    latitude: np.ndarray
+    height_above_ground: np.ndarray
+    gimbal_pitch: np.ndarray
+    gimbal_yaw: np.ndarray
+
+    diagonal_fov: float | None = 88 # DJI Maverick 2S, TODO: have user input their own camera parameters
+    vertical_fov: float | None = None
+    horizontal_fov: float | None = None
+    aspect_ratio: float | None = None
 
 class GeoTaggingInput(BaseModel):
     """
@@ -44,9 +95,9 @@ class GeoTaggingInput(BaseModel):
     #############################
     # Frame Specific Parameters #
     #############################
+    TODO: Should probably support altitude in the future. This would also require the altitude the drone starts at (on ground)
     - longitude (np.ndarray): Camera longitude per frame, shape (F,).
     - latitude (np.ndarray): Camera latitude per frame, shape (F,).
-    - altitude (np.ndarray): Camera altitude (MSL) per frame, shape (F,).
     - height_above_ground (np.ndarray): Camera height above ground per frame, shape (F,).
     - gimbal_pitch (np.ndarray): Gimbal pitch in degrees per frame, shape (F,).
     - gimbal_yaw (np.ndarray): Gimbal yaw in degrees per frame, shape (F,).
@@ -60,7 +111,6 @@ class GeoTaggingInput(BaseModel):
 
     longitude: np.ndarray
     latitude: np.ndarray
-    altitude: np.ndarray
     height_above_ground: np.ndarray
     gimbal_pitch: np.ndarray
     gimbal_yaw: np.ndarray
