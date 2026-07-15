@@ -84,7 +84,29 @@ class GeoTaggingOutput(BaseModel):
     gps_coords: list[np.ndarray]
 
 class DeduplicationInput(BaseModel):
-    pass
+    """
+    GPS frames to deduplicate. 
+
+    Attributes:
+    - gps_coords (list[np.ndarray]): One entry per frame. Each array has shape (N_f, 4, 2)
+      holding (lat, lon) for the four corners of every detection in that frame, ordered
+      [top-left, top-right, bottom-right, bottom-left].
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    gps_coords: list[np.ndarray]
 
 class DeduplicationOutput(BaseModel):
-    pass
+    """
+    Deduplicated gps objects. Detections that map to the same physical object across
+    the video have been collapsed into a single averaged bounding box, so the frame
+    axis no longer exists.
+
+    Attributes:
+    - gps_coords (np.ndarray): Array of shape (N_unique, 4, 2) holding (lat, lon) for
+      the four corners of every unique physical object detected in the video, ordered
+      [top-left, top-right, bottom-right, bottom-left].
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    gps_coords: np.ndarray
