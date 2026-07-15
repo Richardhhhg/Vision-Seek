@@ -1,4 +1,5 @@
-data
+data/*
+!data/test_data/
 *.egg-info
 *.pyc
 __pycache__/

@@ -1,0 +1,5 @@
+data from:
+https://huggingface.co/datasets/imageomics/KABR-mini-scene-raw-videos/tree/main/12_01_23-DJI_0002
+
+telemetry data from: 
+https://huggingface.co/datasets/imageomics/KABR-telemetry
