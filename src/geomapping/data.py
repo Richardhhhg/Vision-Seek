@@ -7,10 +7,35 @@ from detection.data import DetectionOutput
 
 
 class GeoMappingInput(BaseModel):
-    pass
+    """
+    Input data for the GeoMapping Module.
+    
+    Attributes:
+    - detection_output (DetectionOutput): The output of the detection module, which includes the bounding box coordinates of the detected objects in the video.
+    - srt_file_path (str): The path to the SRT file that contains the telemetry data for the video.
+    - telemetry_file_path (str): The path to the telemetry file that contains additional telemetry data for the video.
+    - video_file_path (str): The path to the video file that was processed by the detection module.
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    detection_output: DetectionOutput
+    srt_file_path: str
+    telemetry_file_path: str
+    video_file_path: str
 
 class GeoMappingOutput(BaseModel):
-    pass
+    """
+    Returns all the geotagged images in geojson format. This is the final output of the geomapping module.
+
+    Attributes:
+    - gps_coords (np.ndarray): Array of shape (N_unique, 4, 2) holding (lat, lon) for
+      the four corners of every unique physical object detected in the video, ordered
+      [top-left, top-right, bottom-right, bottom-left]. Where N_unique is the number of unique physical objects detected in the video.
+
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    gps_coords: np.ndarray
 
 class TelemetryInput(BaseModel):
     """
@@ -140,7 +165,7 @@ class DeduplicationInput(BaseModel):
     Attributes:
     - gps_coords (list[np.ndarray]): One entry per frame. Each array has shape (N_f, 4, 2)
       holding (lat, lon) for the four corners of every detection in that frame, ordered
-      [top-left, top-right, bottom-right, bottom-left].
+      [top-left, top-right, bottom-right, bottom-left]. Where N_f is the number of detections in frame f.
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -155,7 +180,7 @@ class DeduplicationOutput(BaseModel):
     Attributes:
     - gps_coords (np.ndarray): Array of shape (N_unique, 4, 2) holding (lat, lon) for
       the four corners of every unique physical object detected in the video, ordered
-      [top-left, top-right, bottom-right, bottom-left].
+      [top-left, top-right, bottom-right, bottom-left]. Where N_unique is the number of unique physical objects detected in the video.
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
