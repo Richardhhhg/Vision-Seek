@@ -42,6 +42,10 @@ class Deduplicator:
     Attributes:
     - _DISTANCE_THRESHOLD_M (float): Two detections are considered duplicates when the
       geodesic distance between their bbox centroids is <= this value (meters).
+    - _MIN_DETECTION_TIME_S (float): Minimum time (seconds) an object must appear in
+      the video for it to survive the ``_remove_one_offs`` pre-filter.
+    - _FPS (int): Assumed video frame rate; used to translate
+      ``_MIN_DETECTION_TIME_S`` into a minimum frame count.
     - _GEOD (pyproj.Geod): WGS84 geoid used for vectorized geodesic distance.
 
     Methods:
@@ -62,17 +66,22 @@ class Deduplicator:
       cluster labels for each detection.
     - _average_clusters (bboxes, labels) -> np.ndarray: Per-cluster mean of bbox
       corners, returning a (N_unique, 4, 2) array.
+    - _remove_one_offs (DeduplicationInput) -> DeduplicationInput: Pre-filter that
+      drops clusters appearing in fewer frames than ``_MIN_DETECTION_TIME_S * _FPS``.
     - _deduplicate (DeduplicationInput) -> np.ndarray: End-to-end pipeline that ties
       the above together.
     """
     _DISTANCE_THRESHOLD_M = 1.0
+    _MIN_DETECTION_TIME_S = 1.0
+    _FPS = 30
     _GEOD = Geod(ellps="WGS84")
 
     def __init__(self):
         pass
 
     def invoke(self, input_data: DeduplicationInput) -> DeduplicationOutput:
-        gps_coords = self._deduplicate(input_data)
+        filtered = self._remove_one_offs(input_data)
+        gps_coords = self._deduplicate(filtered)
         return DeduplicationOutput(gps_coords=gps_coords)
 
     def _flatten_detections(self, data: DeduplicationInput) -> np.ndarray:
@@ -194,3 +203,73 @@ class Deduplicator:
             deduplicated.shape[0],
         )
         return deduplicated
+    
+    def _remove_one_offs(self, data: DeduplicationInput) -> DeduplicationInput:
+        """
+        Remove detections that only appear in the video for less than
+        ``_MIN_DETECTION_TIME_S`` seconds (at ``_FPS``).
+
+        Because "how long does an object appear" requires knowing which
+        per-frame detections are the same physical object, we run the same
+        spatial single-linkage clustering used by ``_deduplicate``, count the
+        number of distinct frames each cluster is present in, and drop every
+        cluster whose frame count is below ``_MIN_DETECTION_TIME_S * _FPS``.
+        Returns a new ``DeduplicationInput`` with the surviving detections
+        preserved in their original per-frame ``(N_f, 4, 2)`` layout.
+        """
+        frames = data.gps_coords
+        bboxes_parts: list[np.ndarray] = []
+        frame_ids_parts: list[np.ndarray] = []
+        for f_idx, f in enumerate(frames):
+            arr = np.asarray(f, dtype=np.float64)
+            if arr.size == 0:
+                continue
+            bboxes_parts.append(arr)
+            frame_ids_parts.append(np.full(arr.shape[0], f_idx, dtype=np.int64))
+
+        if not bboxes_parts:
+            return data
+
+        bboxes = np.concatenate(bboxes_parts, axis=0)
+        frame_ids = np.concatenate(frame_ids_parts)
+
+        centroids = self._get_centroids(bboxes)
+        condensed = self._get_pairwise_distances(centroids)
+        labels = self._cluster_detections(condensed, bboxes.shape[0])
+
+        _, inverse = np.unique(labels, return_inverse=True)
+        n_clusters = int(inverse.max()) + 1
+        # Count distinct frames per cluster, not raw detections: a stationary
+        # object can appear multiple times in the same frame (e.g. from
+        # overlapping SAHI tiles) and we don't want that to inflate its duration.
+        frames_per_cluster = np.array(
+            [np.unique(frame_ids[inverse == c]).size for c in range(n_clusters)],
+            dtype=np.int64,
+        )
+        min_frames = int(self._MIN_DETECTION_TIME_S * self._FPS)
+        keep_cluster = frames_per_cluster >= min_frames
+        keep_mask = keep_cluster[inverse]
+
+        kept_bboxes = bboxes[keep_mask]
+        kept_frame_ids = frame_ids[keep_mask]
+
+        new_gps_coords: list[np.ndarray] = []
+        for f_idx in range(len(frames)):
+            in_frame = kept_frame_ids == f_idx
+            if in_frame.any():
+                new_gps_coords.append(kept_bboxes[in_frame])
+            else:
+                new_gps_coords.append(np.empty((0, 4, 2), dtype=np.float64))
+
+        logger.info(
+            "One-off filter kept %d/%d clusters (min %d frames = %.2fs at %d fps); "
+            "%d/%d detections survived.",
+            int(keep_cluster.sum()),
+            n_clusters,
+            min_frames,
+            self._MIN_DETECTION_TIME_S,
+            self._FPS,
+            int(keep_mask.sum()),
+            bboxes.shape[0],
+        )
+        return DeduplicationInput(gps_coords=new_gps_coords)
