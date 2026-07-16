@@ -25,17 +25,18 @@ class GeoMappingInput(BaseModel):
 
 class GeoMappingOutput(BaseModel):
     """
-    Returns all the geotagged images in geojson format. This is the final output of the geomapping module.
+    Returns all the geotagged objects in geojson format. This is the final output of the geomapping module.
 
     Attributes:
     - gps_coords (np.ndarray): Array of shape (N_unique, 4, 2) holding (lat, lon) for
       the four corners of every unique physical object detected in the video, ordered
       [top-left, top-right, bottom-right, bottom-left]. Where N_unique is the number of unique physical objects detected in the video.
-
+    - geojson_path (str): Path to the saved GeoJSON FeatureCollection on disk.
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     gps_coords: np.ndarray
+    geojson_path: str
 
 class TelemetryInput(BaseModel):
     """

@@ -1,3 +1,10 @@
+import json
+import os
+import uuid
+from pathlib import Path
+
+import numpy as np
+
 from geomapping.data import (
     DeduplicationInput,
     DeduplicationOutput,
@@ -11,6 +18,9 @@ from geomapping.data import (
 from geomapping.deduplication.deduplicator import Deduplicator
 from geomapping.geotagging.geotagger import GeoTagger
 from geomapping.telemetry.telemetry import TelemetryProcessor
+
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+_GEOJSON_OUTPUTS_DIR = os.path.join(_REPO_ROOT, "geojson_outputs")
 
 
 class GeoMapper:
@@ -35,7 +45,8 @@ class GeoMapper:
         telemetry = self.telemetry_processor.invoke(self._to_telemetry_input(input))
         geotagged = self.geotagger.invoke(self._to_geotagging_input(input, telemetry))
         deduped = self.deduplicator.invoke(self._to_deduplication_input(geotagged))
-        return self._to_geomapping_output(deduped)
+        geojson_path = self._save_geojson(deduped.gps_coords, input.video_file_path)
+        return self._to_geomapping_output(deduped, geojson_path)
 
     def _to_telemetry_input(self, input: GeoMappingInput) -> TelemetryInput:
         return TelemetryInput(
@@ -65,5 +76,38 @@ class GeoMapper:
     def _to_deduplication_input(self, geotagged: GeoTaggingOutput) -> DeduplicationInput:
         return DeduplicationInput(gps_coords=geotagged.gps_coords)
 
-    def _to_geomapping_output(self, deduped: DeduplicationOutput) -> GeoMappingOutput:
-        return GeoMappingOutput(gps_coords=deduped.gps_coords)
+    def _to_geomapping_output(
+        self, deduped: DeduplicationOutput, geojson_path: str
+    ) -> GeoMappingOutput:
+        return GeoMappingOutput(
+            gps_coords=deduped.gps_coords,
+            geojson_path=geojson_path,
+        )
+
+    def _save_geojson(self, gps_coords: np.ndarray, video_file_path: str) -> str:
+        """
+        Write a GeoJSON FeatureCollection of closed Polygon rings for each unique object.
+        Corner order is [tl, tr, br, bl] as (lat, lon); GeoJSON uses [lon, lat].
+        """
+        os.makedirs(_GEOJSON_OUTPUTS_DIR, exist_ok=True)
+        stem = Path(video_file_path).stem or "geomap"
+        output_path = os.path.join(
+            _GEOJSON_OUTPUTS_DIR, f"{stem}_{uuid.uuid4().hex}.geojson"
+        )
+
+        features = []
+        for i, corners in enumerate(np.asarray(gps_coords, dtype=np.float64)):
+            # corners: (4, 2) as (lat, lon) -> GeoJSON ring as (lon, lat), closed.
+            ring = [[float(lon), float(lat)] for lat, lon in corners]
+            ring.append(ring[0])
+            features.append(
+                {
+                    "type": "Feature",
+                    "properties": {"id": i},
+                    "geometry": {"type": "Polygon", "coordinates": [ring]},
+                }
+            )
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump({"type": "FeatureCollection", "features": features}, f, indent=2)
+        return output_path

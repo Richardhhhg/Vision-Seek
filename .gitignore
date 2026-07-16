@@ -5,3 +5,4 @@ data/*
 __pycache__/
 .coverage
 annotated_videos/
+geojson_outputs/
