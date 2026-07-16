@@ -83,6 +83,12 @@ class YOLODetectionModel(AbstractDetectionModel):
                 )
             )
 
+        # Postprocess only needs tile metadata + bboxes, not the pixel buffer.
+        # Dropping our references and the model field here lets the (potentially
+        # multi-GB) preprocessed frames array be freed before postprocessing runs.
+        del frames, frames_np
+        preprocessed_video.frames = np.empty((0,), dtype=np.uint8)
+
         return DetectionModelOutput(
             annotated_frames=annotated_frames,
             preprocessed_video=preprocessed_video,

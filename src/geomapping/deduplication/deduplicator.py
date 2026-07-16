@@ -3,7 +3,6 @@ import logging
 import numpy as np
 from pyproj import Geod
 from scipy.cluster.hierarchy import fcluster, linkage
-from scipy.spatial.distance import squareform
 
 from geomapping.data import DeduplicationInput, DeduplicationOutput
 
@@ -55,10 +54,12 @@ class Deduplicator:
       detections into a single (M, 4, 2) array.
     - _get_centroids (bboxes) -> np.ndarray: Average the 4 corners of each detection to
       get a (M, 2) centroid (lat, lon).
-    - _get_pairwise_distances (centroids) -> np.ndarray: Vectorized (M, M) geodesic
-      distance matrix between all centroid pairs.
-    - _cluster_detections (dist_matrix) -> np.ndarray: Single-linkage cluster labels
-      for each detection.
+    - _get_pairwise_distances (centroids) -> np.ndarray: Vectorized geodesic distances
+      between all centroid pairs, returned as scipy's condensed 1D upper-triangle
+      form (length ``M*(M-1)//2``). This is exactly what ``linkage`` expects, so we
+      never materialize the (M, M) matrix.
+    - _cluster_detections (condensed_distances, m) -> np.ndarray: Single-linkage
+      cluster labels for each detection.
     - _average_clusters (bboxes, labels) -> np.ndarray: Per-cluster mean of bbox
       corners, returning a (N_unique, 4, 2) array.
     - _deduplicate (DeduplicationInput) -> np.ndarray: End-to-end pipeline that ties
@@ -99,19 +100,17 @@ class Deduplicator:
 
     def _get_pairwise_distances(self, centroids: np.ndarray) -> np.ndarray:
         """
-        Vectorized pairwise geodesic distance matrix (meters).
+        Vectorized pairwise geodesic distances (meters) in scipy's condensed
+        upper-triangle form: a flat array of length ``m*(m-1)//2``.
 
-        Input:  centroids of shape (M, 2), where axis 1 is (lat, lon).
-        Output: symmetric (M, M) distance matrix with zeros on the diagonal.
-
-        Uses ``pyproj.Geod.inv`` which is fully vectorized: given equal-length arrays
-        of (lon1, lat1, lon2, lat2) it returns forward azimuth, back azimuth, and
-        distance arrays of matching length. We only evaluate the upper triangle and
-        mirror it, avoiding redundant computation.
+        Returning the condensed form instead of the full (m, m) matrix roughly halves
+        the pairwise-distance memory footprint and removes the extra ``squareform``
+        copy inside clustering. ``scipy.cluster.hierarchy.linkage`` accepts this
+        format directly.
         """
         m = centroids.shape[0]
         if m < 2:
-            return np.zeros((m, m), dtype=np.float64)
+            return np.empty((0,), dtype=np.float64)
 
         idx_i, idx_j = np.triu_indices(m, k=1)
         lats1 = centroids[idx_i, 0]
@@ -119,32 +118,32 @@ class Deduplicator:
         lats2 = centroids[idx_j, 0]
         lons2 = centroids[idx_j, 1]
         _, _, dist = self._GEOD.inv(lons1, lats1, lons2, lats2)
+        return dist
 
-        d = np.zeros((m, m), dtype=np.float64)
-        d[idx_i, idx_j] = dist
-        d[idx_j, idx_i] = dist
-        return d
-
-    def _cluster_detections(self, dist_matrix: np.ndarray) -> np.ndarray:
+    def _cluster_detections(
+        self, condensed_distances: np.ndarray, m: int
+    ) -> np.ndarray:
         """
         Single-linkage cluster the detections whose pairwise geodesic centroid distance
         is within ``_DISTANCE_THRESHOLD_M``.
 
-        Input:  (M, M) symmetric distance matrix in meters.
-        Output: (M,) integer cluster labels (1-indexed, matching scipy's convention).
+        Input:
+        - condensed_distances: length ``m*(m-1)//2`` upper-triangle distances (meters).
+        - m: number of detections that produced the condensed vector (needed to handle
+          the trivial 0/1-detection cases before calling ``linkage``).
+
+        Output: (m,) integer cluster labels (1-indexed, matching scipy's convention).
 
         Single-linkage is used so that transitive near-duplicates chain into the same
         cluster: if A~B and B~C then A, B, C are one cluster even if A and C are
         farther apart than the threshold.
         """
-        m = dist_matrix.shape[0]
         if m == 0:
             return np.empty((0,), dtype=np.int64)
         if m == 1:
             return np.array([1], dtype=np.int64)
 
-        condensed = squareform(dist_matrix, checks=False)
-        linkage_matrix = linkage(condensed, method="single")
+        linkage_matrix = linkage(condensed_distances, method="single")
         labels = fcluster(
             linkage_matrix, t=self._DISTANCE_THRESHOLD_M, criterion="distance"
         )
@@ -185,8 +184,8 @@ class Deduplicator:
             return np.empty((0, 4, 2), dtype=np.float64)
 
         centroids = self._get_centroids(bboxes)
-        dist_matrix = self._get_pairwise_distances(centroids)
-        labels = self._cluster_detections(dist_matrix)
+        condensed = self._get_pairwise_distances(centroids)
+        labels = self._cluster_detections(condensed, bboxes.shape[0])
         deduplicated = self._average_clusters(bboxes, labels)
         logger.info(
             "Deduplicated %d detections into %d unique objects.",
