@@ -108,6 +108,7 @@ class Deduplicator:
         copy inside clustering. ``scipy.cluster.hierarchy.linkage`` accepts this
         format directly.
         """
+        # TODO: I believe this is O(m^2) in both memory and time. Use better algorithm or cap input.
         m = centroids.shape[0]
         if m < 2:
             return np.empty((0,), dtype=np.float64)

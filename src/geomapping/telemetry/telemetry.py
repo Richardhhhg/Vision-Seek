@@ -93,6 +93,7 @@ class TelemetryProcessor:
                     f"(first missing frame={int(missing[0])})."
                 )
             return tel_by_frame
+        return telemetry_data
 
     def _process_srt(self, srt_file_path: str) -> np.ndarray:
         """

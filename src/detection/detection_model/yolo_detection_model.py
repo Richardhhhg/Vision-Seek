@@ -87,6 +87,7 @@ class YOLODetectionModel(AbstractDetectionModel):
         # Dropping our references and the model field here lets the (potentially
         # multi-GB) preprocessed frames array be freed before postprocessing runs.
         del frames, frames_np
+        preprocessed_video = preprocessed_video.model_copy(deep=False)
         preprocessed_video.frames = np.empty((0,), dtype=np.uint8)
 
         return DetectionModelOutput(
