@@ -41,8 +41,19 @@ Make sure you are working on a branch that isn't `main`. Once you have made your
 
 To help speed up the review, please record the result of `pytest` in your PR. This is just to make sure nothing broke and we are still meeting development standards.
 
+## Project Demo
+
+Test video can be found in `data/test_data/test_5.mp4`
+  
+This video consists of animals from the KABR dataset.
+  
+Output of Running this Project on the Sample Video:  
+[![Image of Detection Boxes](https://raw.githubusercontent.com/Richardhhhg/Vision-Seek/main/image/boxes.png)]
+  
+Each box represents an animal detected by the vision model. This is mapped onto the real world location using geojson data. You can see the location of the detections by uploading the geojson data into any platform which renders it (in this case geojson.io).
+  
 ## TODO
 
 - [x] Detecting Objects
-- [ ] Extracting GPS data about the location of the detected objects
+- [x] Extracting GPS data about the location of the detected objects
 - [ ] Displaying Mapping
