@@ -15,7 +15,7 @@ from detection.tests.paths import (
 def test_detection_smoke():
     detect = Detection(config_path=TEST_CONFIG_REAL_PATH)
     sample_input = DetectionInput(video_path=TEST_VIDEO_PATH)
-    detection_output = detect.run_detection(sample_input)
+    detection_output = detect.invoke(sample_input)
     assert isinstance(detection_output, DetectionOutput)
     assert detection_output.output_video_path is not None
     assert detection_output.annotated_frames is not None
@@ -24,4 +24,4 @@ def test_detection_smoke():
 def test_detection_invalid_config():
     with pytest.raises(ValueError):
         detect = Detection(config_path=TEST_CONFIG_FAKE_PATH)
-        detect.run_detection(DetectionInput(video_path=TEST_VIDEO_PATH))
+        detect.invoke(DetectionInput(video_path=TEST_VIDEO_PATH))

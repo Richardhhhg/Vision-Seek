@@ -19,7 +19,7 @@ class Detection:
     - postprocessor (Postprocessor): Postprocessor used for postprocessing the detection results
 
     Methods:
-    - run_detection (detection_input: DetectionInput): Runs the detection on the given input and returns the results
+    - invoke (detection_input: DetectionInput): Runs the detection on the given input and returns the results
     """
     def __init__(self, config_path: str = CONFIG_PATH):
         self.detection_model, self.preprocessor, self.postprocessor = self._load_config(config_path)
@@ -49,7 +49,7 @@ class Detection:
 
         return detection_model, preprocessor, postprocessor
 
-    def run_detection(
+    def invoke(
         self, detection_input: DetectionInput, device: str | None = None
     ) -> DetectionOutput:
         preprocessed_video = self.preprocessor.preprocess_video(detection_input.video_path)

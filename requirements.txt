@@ -1,11 +1,14 @@
 # runtime
 numpy
+pandas
 torch
 ultralytics
 opencv-python
 Pillow
 pydantic
 sahi
+pyproj
+scipy
 
 # dev
 pytest

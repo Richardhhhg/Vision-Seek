@@ -29,7 +29,7 @@ class DetectionService:
         while True:
             event = await self.queue.get()
             detection_input = DetectionInput(video_path=event.video_path)
-            detection_output = self.detect.run_detection(detection_input)
+            detection_output = self.detect.invoke(detection_input)
             detection_complete_event = DetectionCompleteEvent(
                 detection_output=detection_output, metadata=event.metadata
             )

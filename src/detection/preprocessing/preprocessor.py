@@ -51,19 +51,34 @@ class Preprocessor:
     def preprocess_video(self, video_path: str) -> PreprocessedVideo:
         """
         Preprocesses the video at the given path according to the added steps and returns the preprocessed video.
+
+        Frames are read straight into a preallocated ``(N, H, W, C)`` array so we avoid
+        keeping a Python list of per-frame arrays plus a stacked copy in memory.
         """
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             raise ValueError(f"Could not open video file: {video_path}")
-        frames: list[np.ndarray] = []
+
+        n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frames = np.empty((max(n, 0), h, w, 3), dtype=np.uint8)
+        idx = 0
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            frames.append(frame)
+            if idx >= frames.shape[0]:
+                # Container over-reported frame count; grow just enough to fit.
+                frames = np.concatenate([frames, frame[None, ...]], axis=0)
+            else:
+                frames[idx] = frame
+            idx += 1
         cap.release()
+        if idx < frames.shape[0]:
+            frames = frames[:idx]
 
-        state: dict[str, Any] = {"frames": np.array(frames)}
+        state: dict[str, Any] = {"frames": frames}
         for step_fn in self.steps:
             state.update(step_fn(state["frames"]))
 
@@ -77,14 +92,13 @@ class Preprocessor:
         """
         Converts every frame to a 3-channel black and white image (all channels equal).
 
-        Returns a state update dict with the new frames.
+        Writes into a preallocated output buffer so we don't keep a temporary Python
+        list of per-frame arrays alongside the final stacked copy.
         """
-        bw_frames = np.array(
-            [
-                cv2.cvtColor(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
-                for f in frames
-            ]
-        )
+        bw_frames = np.empty_like(frames)
+        for i, f in enumerate(frames):
+            gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+            bw_frames[i] = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
         return {"frames": bw_frames}
 
     def _resize(
@@ -98,38 +112,56 @@ class Preprocessor:
         - num_tiles: number of tiles produced per source frame.
         - tile_offset: (step_x, step_y) stride between adjacent tile origins.
         - tile_positions: (x, y) starting pixel of each tile in the original frame.
-        """
-        all_tiles: list[np.ndarray] = []
-        positions: list[tuple[int, int]] | None = None
 
-        for source_frame in frames:
+        Slices are written into a preallocated output buffer once the per-frame tile
+        count is known from the first frame, avoiding a Python list of per-tile arrays
+        plus a stacked copy in memory.
+        """
+        n = frames.shape[0]
+        channels = frames.shape[-1] if frames.ndim == 4 else 1
+
+        first = slice_image(
+            image=Image.fromarray(frames[0]),
+            slice_height=height,
+            slice_width=width,
+            # TODO: this should be set by user in future
+            overlap_height_ratio=0.2,
+            overlap_width_ratio=0.2,
+            auto_slice_resolution=False,
+            verbose=False,
+        )
+        positions = [
+            (int(s.starting_pixel[0]), int(s.starting_pixel[1]))
+            for s in first.sliced_image_list
+        ]
+        num_tiles = len(positions)
+        all_tiles = np.empty(
+            (n * num_tiles, height, width, channels), dtype=frames.dtype
+        )
+        for j, sliced in enumerate(first.sliced_image_list):
+            all_tiles[j] = np.asarray(sliced.image)
+
+        for i in range(1, n):
             result = slice_image(
-                image=Image.fromarray(source_frame),
+                image=Image.fromarray(frames[i]),
                 slice_height=height,
                 slice_width=width,
-                # TODO: this should be set by user in future
                 overlap_height_ratio=0.2,
                 overlap_width_ratio=0.2,
                 auto_slice_resolution=False,
                 verbose=False,
             )
-            for sliced in result.sliced_image_list:
-                all_tiles.append(np.array(sliced.image))
-            if positions is None:
-                positions = [
-                    (int(s.starting_pixel[0]), int(s.starting_pixel[1]))
-                    for s in result.sliced_image_list
-                ]
+            for j, sliced in enumerate(result.sliced_image_list):
+                all_tiles[i * num_tiles + j] = np.asarray(sliced.image)
 
-        positions = positions or []
         xs = sorted({p[0] for p in positions})
         ys = sorted({p[1] for p in positions})
         step_x = xs[1] - xs[0] if len(xs) > 1 else 0
         step_y = ys[1] - ys[0] if len(ys) > 1 else 0
 
         return {
-            "frames": np.array(all_tiles),
-            "num_tiles": len(positions),
+            "frames": all_tiles,
+            "num_tiles": num_tiles,
             "tile_offset": (step_x, step_y),
             "tile_positions": positions,
         }
