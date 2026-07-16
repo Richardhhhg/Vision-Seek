@@ -9,7 +9,7 @@ from detection.data import DetectionFrame, DetectionModelOutput
 from detection.tests.paths import TEST_MODEL_PATH, TEST_VIDEO_PATH
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def setup():
     import cv2
 
