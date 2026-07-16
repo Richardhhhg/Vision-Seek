@@ -67,7 +67,7 @@ class TelemetryOutput(BaseModel):
     gimbal_pitch: np.ndarray
     gimbal_yaw: np.ndarray
 
-    diagonal_fov: float | None = 88 # DJI Maverick 2S, TODO: have user input their own camera parameters
+    diagonal_fov: float | None = None
     vertical_fov: float | None = None
     horizontal_fov: float | None = None
     aspect_ratio: float | None = None

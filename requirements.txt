@@ -1,5 +1,6 @@
 # runtime
 numpy
+pandas
 torch
 ultralytics
 opencv-python
